@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"regexp"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -8,30 +10,37 @@ import (
 )
 
 type Model struct {
-	fileName  string
-	Content   string
-	ready     bool
-	Err       error
-	textInput textinput.Model
-	viewport  viewport.Model
+	FileName      string
+	Content       string
+	CompiledRegex *regexp.Regexp
+	Err           error
+	TextInput     textinput.Model
+	Viewport      viewport.Model
+	WindowHeight  int
+	WindowWidth   int
 }
 
+var defaultBorderStyle = lipgloss.NewStyle().
+	Border(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("30")).
+	Padding(0, 1)
+
 func InitialModel(filepath, content string) Model {
-
-	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#acaca8ff"))
-
 	ti := textinput.New()
 	ti.Placeholder = "Type regex expression here..."
 	ti.Focus()
 	ti.CharLimit = 156
-	ti.Width = 60
-	ti.Cursor.Style = cursorStyle
+	ti.Width = 20
+	
+	vp := viewport.New(0, 0)
+	vp.SetContent(content)
 
 	return Model{
-		fileName:  filepath,
+		FileName:  filepath,
 		Content:   content,
 		Err:       nil,
-		textInput: ti,
+		TextInput: ti,
+		Viewport:  vp,
 	}
 }
 
