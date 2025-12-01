@@ -29,7 +29,7 @@ var (
 
 	SelectedMatchStyle = lipgloss.NewStyle().
 				Background(lipgloss.Color("#0230f8ff")).
-				Foreground(lipgloss.Color("0"))
+				Foreground(lipgloss.Color("#f3f1efff"))
 
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241")).
