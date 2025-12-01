@@ -14,15 +14,19 @@ var (
 			BorderForeground(lipgloss.Color("205"))
 
 	blurredStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("240")).
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.Color("240"))
+			Foreground(lipgloss.Color("240")).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240"))
 
 	separatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
 	HighlightStyle = lipgloss.NewStyle().
 			Background(lipgloss.Color("#ecdc20")).
 			Foreground(lipgloss.Color("0"))
+
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Padding(0, 1)
 )
 
 func (m Model) ApplyRegexHighlighting(content, pattern string) string {
@@ -75,7 +79,7 @@ func (m Model) ReconstructLine(rawLine string, matches [][]int) string {
 }
 
 func (m Model) View() string {
-
+	helpText := helpStyle.Render("ctrl+c: quit | ↑↓/j/k: scroll | esc: unfocus")
 	var inputView string
 	if m.TextInput.Focused() {
 		inputView = focusedStyle.Render(m.TextInput.View())
@@ -90,6 +94,7 @@ func (m Model) View() string {
 		inputView,
 		separatorStyle.Render(strings.Repeat("—", m.WindowWidth)),
 		m.Viewport.View(),
+		helpText,
 	}, "\n")
 
 	return ui
