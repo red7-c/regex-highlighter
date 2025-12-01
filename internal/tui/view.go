@@ -1,60 +1,96 @@
 package tui
 
 import (
-	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	textStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#f7f7f7ff")).Render
-	helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render
+	focusedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("205")).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("205"))
+
+	blurredStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("240")).
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(lipgloss.Color("240"))
+
+	separatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+
+	HighlightStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#ecdc20")).
+			Foreground(lipgloss.Color("0"))
 )
 
-var (
-	TitleStyle = func() lipgloss.Style {
-		b := lipgloss.RoundedBorder()
-		b.Right = "├"
-		return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1)
-	}()
+func (m Model) ApplyRegexHighlighting(content, pattern string) string {
+	if pattern == "" {
+		return content
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return "Error: invalid regex espression" + err.Error()
+	}
 
-	InfoStyle = func() lipgloss.Style {
-		b := lipgloss.RoundedBorder()
-		b.Left = "┤"
-		return TitleStyle.BorderStyle(b)
-	}()
+	normalizedContent := strings.ReplaceAll(m.Content, "\r\n", "\n")
+	lines := strings.Split(normalizedContent, "\n")
 
-	validInputStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#444444ff")).
-			Padding(0, 1)
+	var styledLines []string
 
-	errorInputStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FF0000")).
-			Padding(0, 1)
-)
+	for _, line := range lines {
+		matches := re.FindAllStringIndex(line, -1)
+		styledLine := m.ReconstructLine(line, matches)
+		styledLines = append(styledLines, styledLine)
+	}
 
-func (m Model) HeaderView() string {
-	title := TitleStyle.Render(m.fileName)
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
-	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
+	return strings.Join(styledLines, "\n")
 }
 
-func (m Model) FooterView() string {
-	info := InfoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
-	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
+func (m Model) ReconstructLine(rawLine string, matches [][]int) string {
+
+	style := HighlightStyle
+	var b strings.Builder
+	lastIndex := 0
+
+	for _, match := range matches {
+		start, end := match[0], match[1]
+
+		if start > lastIndex {
+			b.WriteString(rawLine[lastIndex:start])
+		}
+
+		matchedText := rawLine[start:end]
+		b.WriteString(style.Render(matchedText))
+
+		lastIndex = end
+	}
+
+	if lastIndex < len(rawLine) {
+		b.WriteString(rawLine[lastIndex:])
+	}
+
+	return b.String()
 }
 
 func (m Model) View() string {
-	if !m.ready {
-		return "\n  Initializing..."
+
+	var inputView string
+	if m.TextInput.Focused() {
+		inputView = focusedStyle.Render(m.TextInput.View())
+	} else {
+		inputView = blurredStyle.Render(m.TextInput.View())
 	}
-	return fmt.Sprintf("%s\n%s\n%s",
-		helpStyle(m.HeaderView()),
-		textStyle(m.viewport.View()),
-		validInputStyle.Render(m.textInput.View()),
-	)
+	pattern := m.TextInput.Value()
+	highlightedContent := m.ApplyRegexHighlighting(m.Content, pattern)
+	m.Viewport.SetContent(highlightedContent)
+
+	ui := strings.Join([]string{
+		inputView,
+		separatorStyle.Render(strings.Repeat("—", m.WindowWidth)),
+		m.Viewport.View(),
+	}, "\n")
+
+	return ui
 }
