@@ -2,11 +2,11 @@ package tui
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {
@@ -18,20 +18,21 @@ type Model struct {
 	Viewport      viewport.Model
 	WindowHeight  int
 	WindowWidth   int
+	Matches       [][]int
+	CurrentMatch  int
+	ShowHelp      bool
 }
 
-var defaultBorderStyle = lipgloss.NewStyle().
-	Border(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("30")).
-	Padding(0, 1)
-
 func InitialModel(filepath, content string) Model {
+
+	content = strings.ReplaceAll(content, "\r\n", "\n")
+
 	ti := textinput.New()
-	ti.Placeholder = "Type regex expression here..."
+	ti.Placeholder = "Type expression here..."
 	ti.Focus()
-	ti.CharLimit = 156
+	ti.CharLimit = 256
 	ti.Width = 20
-	
+
 	vp := viewport.New(0, 0)
 	vp.SetContent(content)
 
@@ -41,6 +42,7 @@ func InitialModel(filepath, content string) Model {
 		Err:       nil,
 		TextInput: ti,
 		Viewport:  vp,
+		ShowHelp:  false,
 	}
 }
 
