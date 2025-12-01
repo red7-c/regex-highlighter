@@ -18,7 +18,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.WindowHeight = msg.Height
 		m.WindowWidth = msg.Width
 		// for the TextInput (1 line) + some margin (2 lines in this case) + spearator (1 line)
-		headerHeight := 4
+		headerHeight := 5
 		m.Viewport.Height = m.WindowHeight - headerHeight
 		m.Viewport.Width = m.WindowWidth
 		m.TextInput.Width = m.WindowWidth - 5
@@ -27,7 +27,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		case "up", "k":
 			m.Viewport.ScrollUp(1)
@@ -62,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			re, err := regexp.Compile(pattern)
 			if err != nil {
-				m.Err = fmt.Errorf("invalid regex expression", err)
+				m.Err = fmt.Errorf("invalid regex expression %w", err)
 				m.CompiledRegex = nil
 			} else {
 				m.CompiledRegex = re
